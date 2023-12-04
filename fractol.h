@@ -6,7 +6,7 @@
 /*   By: hualhash <hualhash@student.42abudhabi.a    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/28 16:28:37 by hualhash          #+#    #+#             */
-/*   Updated: 2023/11/30 18:19:13 by hualhash         ###   ########.fr       */
+/*   Updated: 2023/12/04 18:40:52 by hualhash         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 # include <stdlib.h>
 # include <unistd.h>
 # include <stdio.h>
+# include <string.h>
 
 # define WIDTH 800
 # define HEIGHT 800
@@ -76,5 +77,7 @@ int			ft_putnbr(int nb);
 int			ft_uputnbr(unsigned int nb);
 int			ft_hex_base(unsigned long nb, int flag);
 void		process_fractal(t_fractal *fractal);
+int			is_valid_number(char *s, double min, double max);
+
 
 #endif
