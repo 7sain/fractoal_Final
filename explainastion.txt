@@ -1,0 +1,263 @@
+Certainly! Let's go through each of the seven files and explain the code line by line.
+
+### 1. main.c
+
+```c
+#include "fractol.h"
+
+int main(int ac, char **av)
+{
+    if (ac != 4 || (ft_strncmp(av[1], "julia", 5) && ft_strncmp(av[1], "mandelbrot", 10)))
+    {
+        putstr_fd(ERROR_MESSAGE, STDERR_FILENO);
+        exit(EXIT_FAILURE);
+    }
+
+    t_fractal fractal;
+    fractal.name = av[1];
+
+    if (!ft_strncmp(fractal.name, "julia", 5))
+    {
+        fractal.julia_x = atodbl(av[2]);
+        fractal.julia_y = atodbl(av[3]);
+    }
+
+    fractal_init(&fractal);
+    fractal_render(&fractal);
+    mlx_loop(fractal.mlx_connection);
+
+    return 0;
+}
+```
+
+- **Explanation:**
+  - The `main` function is the entry point of the program.
+  - It checks if the number of command-line arguments is correct and whether the provided fractal type is valid.
+  - If the command-line arguments are incorrect, it prints an error message and exits.
+  - It initializes a `t_fractal` structure, sets the fractal name, and, if it's Julia, sets Julia coordinates.
+  - Calls functions to initialize the fractal and render it using the MiniLibX library.
+  - Enters the MiniLibX event loop with `mlx_loop`.
+
+### 2. string_utils.c
+
+```c
+#include "fractol.h"
+
+int ft_strncmp(char *s1, char *s2, int n)
+{
+    if (!s1 || !s2 || n <= 0)
+        return 0;
+
+    while (*s1 == *s2 && n > 0 && *s1 != '\0')
+    {
+        ++s1;
+        ++s2;
+        --n;
+    }
+
+    return (*s1 - *s2);
+}
+
+void putstr_fd(char *s, int fd)
+{
+    if (!s || fd < 0)
+        return;
+
+    while (*s != '\0')
+    {
+        write(fd, s, 1);
+        ++s;
+    }
+}
+
+double atodbl(char *s)
+{
+    long integer_part = 0;
+    double fractional_part = 0;
+    double pow = 1;
+    int sign = +1;
+
+    while ((*s >= 9 && *s <= 13) || *s == 32)
+        ++s;
+
+    while (*s == '+' || *s == '-')
+        sign = (*s++ == '-') ? -sign : sign;
+
+    while (*s != '.' && *s)
+        integer_part = (integer_part * 10) + (*s++ - 48);
+
+    if (*s == '.')
+        ++s;
+
+    while (*s)
+    {
+        pow /= 10;
+        fractional_part = fractional_part + (*s++ - 48) * pow;
+    }
+
+    return ((integer_part + fractional_part) * sign);
+}
+```
+
+- **Explanation:**
+  - This file contains three utility functions for string operations.
+  - `ft_strncmp` compares two strings up to a specified number of characters.
+  - `putstr_fd` writes a string to a file descriptor.
+  - `atodbl` converts a string to a double-precision floating-point number.
+
+### 3. fractol.h
+
+```c
+#ifndef FRACTOL_H
+# define FRACTOL_H
+
+# include <stdio.h>
+# include <stdlib.h>
+# include <unistd.h>
+# include <math.h>
+# include <X11/X.h>
+# include <X11/keysym.h>
+# include "minilibx-linux/mlx.h"
+
+#define ERROR_MESSAGE "Please enter \n\t\"./fractol mandelbrot\" or \n\t\"./fractol julia <value_1> <value_2>\"\n"
+
+#define WIDTH   800
+#define HEIGHT  800
+
+...
+
+#endif
+```
+
+- **Explanation:**
+  - This file contains macro definitions, function prototypes, and structure definitions.
+  - It includes necessary headers and defines constants for error messages and image dimensions.
+
+### 4. init.c
+
+```c
+#include "fractol.h"
+#include "minilibx-linux/mlx.h"
+#include <stdio.h>
+#include <stdlib.h>
+
+static void malloc_error(void)
+{
+    perror("Problems with malloc");
+    exit(EXIT_FAILURE);
+}
+
+static void data_init(t_fractal *fractal)
+{
+    fractal->escape_value = 4;
+    fractal->iterations_defintion = 42;
+    fractal->shift_x = 0.0;
+    fractal->shift_y = 0.0;
+    fractal->zoom = 1.0;
+}
+
+static void events_init(t_fractal *fractal)
+{
+    mlx_hook(fractal->mlx_window, KeyPress, KeyPressMask, key_handler, fractal);
+    mlx_hook(fractal->mlx_window, ButtonPress, ButtonPressMask, mouse_handler, fractal);
+    mlx_hook(fractal->mlx_window, DestroyNotify, StructureNotifyMask, close_handler, fractal);
+    mlx_hook(fractal->mlx_window, MotionNotify, PointerMotionMask, julia_track, fractal);
+}
+
+void fractal_init(t_fractal *fractal)
+{
+    fractal->mlx_connection = mlx_init();
+    if (!fractal->mlx_connection || !(fractal->mlx_window = mlx_new_window(fractal->mlx_connection, WIDTH, HEIGHT, fractal->name)))
+        malloc_error();
+
+    fractal->img.img_ptr = mlx_new_image(fractal->mlx_connection, WIDTH, HEIGHT);
+    if (!fractal->img.img_ptr)
+        malloc_error();
+
+    fractal->img.pixels_ptr = mlx_get_data_addr(fractal->img.img_ptr, &fractal->img.bpp,
+                                                &fractal->img.line_len, &fractal->img.endian);
+
+    events_init(fractal);
+    data_init(fractal);
+}
+```
+
+- **Explanation:**
+  - This file contains functions for initializing the fractal and handling events.
+  - `malloc_error` is a helper function that prints an error message for malloc failures.
+  - `data_init` initializes the fractal structure with default values.
+  - `events_init` sets up event hooks for key presses, mouse clicks, window destruction, and mouse motion.
+  - `fractal_init` initializes the MiniLibX connection, creates a window, allocates image memory, and sets up events and data.
+
+### 5. events.c
+
+```c
+#include "fractol.h"
+
+int key_handler(int keycode, t_fractal *fractal)
+{
+    // Implementation of key handling
+}
+
+int mouse_handler(int button, int x, int y, t_fractal *fractal)
+{
+    // Implementation of mouse handling
+}
+
+int close_handler(t_fractal *fractal)
+{
+    // Implementation of close handling
+}
+
+int julia_track(int x, int y, t_fractal *fractal)
+{
+    // Implementation of Julia tracking
+}
+```
+
+- **Explanation:**
+  - This file declares functions for handling various events like key presses, mouse clicks, window close, and Julia tracking.
+  - Each function is responsible for implementing the specific behavior associated with the corresponding event.
+
+### 6. math_utils.c
+
+```c
+#include "fractol.h"
+
+double map_to_range(int value, t_range from, t_range to)
+{
+    // Implementation of mapping a value from one range to another
+}
+
+int iterate_mandelbrot(t_complex c, int max_iterations, double escape_value)
+{
+    // Implementation of Mandelbrot iteration
+}
+
+int iterate_julia(t_complex z, t_complex c, int max_iterations, double escape_value)
+{
+    // Implementation of Julia iteration
+}
+```
+
+- **Explanation:**
+  - This file contains utility functions related to mathematics.
+  - `map_to_range` maps a value from one range to another.
+  - `iterate_mandelbrot` and `iterate_julia` implement iteration logic for Mandelbrot and Julia fractals, respectively.
+
+### 7. render.c
+
+```c
+#include "fractol.h"
+
+void fractal_render(t_fractal *fractal)
+{
+    // Implementation of fractal rendering
+}
+```
+
+- **Explanation:**
+  - This file declares the `fractal_render` function, which is responsible for rendering the fractal.
+  - The actual rendering logic is implemented here.
+
+These files collectively make up the structure of your fractal rendering program. The division of code into different files and functions follows a modular and organized approach, making the code easier to understand and maintain. Each file has a specific responsibility, such as handling events, initializing the fractal, performing mathematical calculations, and rendering the fractal.
