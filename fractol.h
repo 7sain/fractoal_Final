@@ -6,7 +6,7 @@
 /*   By: hualhash <hualhash@student.42abudhabi.a    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/28 16:28:37 by hualhash          #+#    #+#             */
-/*   Updated: 2023/12/04 20:08:39 by hualhash         ###   ########.fr       */
+/*   Updated: 2023/12/09 17:50:52 by hualhash         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,6 +79,5 @@ int			ft_hex_base(unsigned long nb, int flag);
 void		process_fractal(t_fractal *fractal);
 int			is_valid_number(char *s);
 char		*ft_strchr(const char *s, int c);
-
 
 #endif

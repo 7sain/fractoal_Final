@@ -6,7 +6,7 @@
 /*   By: hualhash <hualhash@student.42abudhabi.a    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/11/28 16:29:06 by hualhash          #+#    #+#             */
-/*   Updated: 2023/12/04 20:08:09 by hualhash         ###   ########.fr       */
+/*   Updated: 2023/12/09 22:26:56 by hualhash         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,39 +35,40 @@ t_complex	square_complex(t_complex z)
 	return (result);
 }
 
-int	is_valid_number(char *s)
+int	extension(char *s)
 {
-	if (!s || *s == '\0') // Check if the string is empty
-		return (0);
-	int hasDigits = 0; // Flag to check if there is at least one digit
-	int hasDot = 0;    // Flag to check if there is at least one dot
-	// Check the first character for '+' or '-'
-	if (*s == '+' || *s == '-')
-	{
-		s++;
-		// Exit if '+' or '-' is alone
-		if (*s == '\0')
-			return (0);
-	}
+	int	has_dot;
+	int	has_digits;
+
+	has_dot = 0;
+	has_digits = 0;
 	while (*s)
 	{
 		if (*s == '.')
 		{
-			// Exit if '.' is alone or there is no digit before or after it
-			if (hasDot || !hasDigits || (*(s + 1) == '\0' || *(s + 1) < '0'
+			if (has_dot || !has_digits || (*(s + 1) == '\0' || *(s + 1) < '0'
 					|| *(s + 1) > '9'))
 				return (0);
-			hasDot = 1;
+			has_dot = 1;
 		}
-		else if (*s < '0' || *s > '9') // Check if the character is not a digit
-		{
+		else if (*s < '0' || *s > '9')
 			return (0);
-		}
 		else
-		{
-			hasDigits = 1;
-		}
+			has_digits = 1;
 		s++;
 	}
-	return (hasDigits); // Return 1 if at least one digit is found, 0 otherwise
+	return (has_digits);
+}
+
+int	is_valid_number(char *s)
+{
+	if (!s || *s == '\0')
+		return (0);
+	if (*s == '+' || *s == '-')
+	{
+		s++;
+		if (*s == '\0')
+			return (0);
+	}
+	return (extension(s));
 }
